@@ -8,19 +8,18 @@ const userRouter = require('./routes/user.routes.js');
 const imageRoutes = require('./routes/image.routes.js');
 var mediaRoutes = require("./controllors/media.controllor.js");
 
+var getSecrets = require("../utils/aws-secrets");
+
 var app = express();
 
 
-
+var secrets = getSecrets();
 AWS.config.update({
-    accessKeyId : "AKIAVVTU3VFINIXILKMC",
-    secretAccessKey : "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",
+    accessKeyId : secrets.AWS_ACCESSKEY,
+    secretAccessKey : secrets.AWS_SECRETACCESSKEY,
     region : "ap-southeast-1"
 });
 var cognito = new AWS.CognitoIdentityServiceProvider({ region: "ap-southeast-1" });
-var clientId = "2rjfr227ulsl2dkdc14gir6l7q"
-var clientSecret = "1oe4fenhdb8jebl16kr7f98va281pn8mdiljq6chvi85senuiguh"; // <-- Add your Cognito App Client Secret here
-
 app.use(bodyParser.json());
 
 var PORT = 3000;
