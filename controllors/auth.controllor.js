@@ -4,10 +4,12 @@ const crypto = require('crypto');
 const ApiError = require('../utils/ApiError.js');
 const ApiResponse = require('../utils/ApiResponse.js');
 const asyncHandler = require('../utils/asyncHandler.js');
+var getSecrets = require("../utils/aws-secrets");
 
+var secrets = getSecrets();
 const cognito = new AWS.CognitoIdentityServiceProvider({ region: 'ap-southeast-1' });
-const clientId = '2rjfr227ulsl2dkdc14gir6l7q';
-const clientSecret = '1oe4fenhdb8jebl16kr7f98va281pn8mdiljq6chvi85senuiguh';
+const clientId = secrets.AWS_COGNITO_CLIENTID; // Replace with your actual Cognito Client ID
+const clientSecret = secrets.AWS_COGNITO_CLIENTSECRET;
 
 function generateSecretHash(username) {
     return crypto.createHmac('SHA256', clientSecret)

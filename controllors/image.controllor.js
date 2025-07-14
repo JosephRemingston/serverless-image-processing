@@ -4,9 +4,11 @@ const axios = require('axios');
 const asyncHandler = require('../utils/asyncHandler');
 var ApiError = require("../utils/ApiError");
 var ApiResponse = require("../utils/ApiResponse");
+var getSecrets = require("../utils/aws-secrets");
 
+var secrets = getSecrets();
 // Set up Rekognition
-const rekognition = new AWS.Rekognition({ region: process.env.AWS_REGION || 'ap-southeast-1' });
+const rekognition = new AWS.Rekognition({ region: secrets.AWS_REGION || 'ap-southeast-1' });
 
 // POST /process-image
 const processImage = asyncHandler(async (req, res) => {

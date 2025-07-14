@@ -3,12 +3,14 @@ var ApiError = require('../utils/ApiError');
 var ApiResponse = require('../utils/ApiResponse');
 var asyncHandler = require('../utils/asyncHandler');
 var removeContentTypeFromUrl = require("../utils/urlGenerator.js");
+var getSecrets = require("../utils/aws-secrets");
 const { v4: uuidv4 } = require('uuid');
 var AWS = require('aws-sdk');
 
+var secrets = getSecrets();
 AWS.config.update({
-    accessKeyId : "AKIAVVTU3VFINIXILKMC",
-    secretAccessKey : "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",
+    accessKeyId : secrets.AWS_ACCESSKEY,
+    secretAccessKey : secrets.AWS_SECRETACCESSKEY,
     region : "ap-southeast-1"
 });
 var s3 = new AWS.S3();
