@@ -7,9 +7,7 @@ const authRouter = require('./routes/auth.routes.js');
 const userRouter = require('./routes/user.routes.js');
 const imageRoutes = require('./routes/image.routes.js');
 var mediaRoutes = require("./controllors/media.controllor.js");
-
-var getSecrets = require("../utils/aws-secrets");
-
+var getSecrets = require("./utils/aws-secrets.js");
 var app = express();
 
 
