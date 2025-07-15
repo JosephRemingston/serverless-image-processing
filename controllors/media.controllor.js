@@ -14,6 +14,8 @@ AWS.config.update({
     region : "ap-southeast-1"
 });
 var s3 = new AWS.S3();
+
+
 var generateSignedUrl = asyncHandler(async(req , res) => {
     var fileName = `${uuidv4()}.png`;
 
