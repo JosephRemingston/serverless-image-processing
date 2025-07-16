@@ -31,7 +31,7 @@ AWS.config.update({
 var cognito = new AWS.CognitoIdentityServiceProvider({ region: "ap-southeast-1" });
 app.use(bodyParser.json());
 
-var PORT = 3000;
+var PORT = 3000 ;
 
 app.get("/" , (req , res) => {
     res.json({

@@ -22,7 +22,7 @@ const generateSignedUrl = asyncHandler(async(req, res) => {
     }
     
     const userId = req.user.username;
-    const fileName = `${uuidv4()}_${userId}.png`;
+    const fileName = `${uuidv4()}.png`;
 
     try{
         var params = {
