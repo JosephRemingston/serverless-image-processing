@@ -1,19 +1,31 @@
-var jwt = require('jsonwebtoken');
+const jwt = require('jsonwebtoken');
+const asyncHandler = require("../utils/asyncHandler.js");
+const ApiError = require("../utils/ApiError.js");
+const ApiResponse = require("../utils/ApiResponse.js");
 
-var authenticateJWT = (req , res , next) => {
-    var token = req.headers.authorization;
-    if(token){
-        jwt.verify(token, 'your-secret-key' , (err, user) => {
-            if(err){
-                return res.sendStatus(403);
+const verifyJWT = asyncHandler(async (req, res, next) => {
+    try {
+        const token = req.headers.authorization;
+        
+        if (!token) {
+          return ApiResponse.error(res, 401, "Unauthorized - No token provided");
+        }
+
+        // Remove 'Bearer ' if present
+        const tokenString = token.startsWith('Bearer ') ? token.slice(7) : token;
+
+        jwt.verify(tokenString, 'your-secret-key', (err, decoded) => {
+            if (err) {
+              return ApiResponse.error(res, 403, "Invalid or expired token");
             }
-            req.user = user;
+            req.user = decoded;
             next();
-        })
+        });
+    } catch (error) {
+        next(error);
     }
-    else{
-        res.sendStatus(401);
-    }
-}
+});
 
-module.exports = authenticateJWT;
+
+
+module.exports = { verifyJWT };

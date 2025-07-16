@@ -8,8 +8,10 @@ var getSecrets = require("../utils/aws-secrets");
 
 var secrets = getSecrets();
 const cognito = new AWS.CognitoIdentityServiceProvider({ region: 'ap-southeast-1' });
-const clientId = secrets.AWS_COGNITO_CLIENTID; // Replace with your actual Cognito Client ID
-const clientSecret = secrets.AWS_COGNITO_CLIENTSECRET;
+const clientId = "2rjfr227ulsl2dkdc14gir6l7q"; // Replace with your actual Cognito Client ID
+const clientSecret = "1oe4fenhdb8jebl16kr7f98va281pn8mdiljq6chvi85senuiguh";
+console.log(clientId);
+console.log(clientSecret);
 
 function generateSecretHash(username) {
     return crypto.createHmac('SHA256', clientSecret)
@@ -68,7 +70,7 @@ const signin = asyncHandler(async (req, res) => {
     };
     try {
         const data = await cognito.initiateAuth(params).promise();
-        const token = jwt.sign({ username: data.AuthenticationResult.AccessToken }, 'your-secret-key', { expiresIn: '1h' });
+        const token = jwt.sign({ username: username }, 'your-secret-key', { expiresIn: '1h' });
         return ApiResponse.success(res, 'Signin successful', { token, data });
     } catch (error) {
         return ApiResponse.error(res, error.statusCode || 400, error.message || 'Signin failed', error);

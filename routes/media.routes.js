@@ -1,9 +1,9 @@
-var express = require("express");
-var generateSignedUrl = require("../controllors/media.controllor.js");
+const express = require("express");
+const { generateSignedUrl } = require("../controllors/media.controllor.js");
+const { verifyJWT } = require("../middleware/auth.middleware.js");
 
+const router = express.Router();
 
-var router = express.Router();
-
-router.get("/generate-signed-url" , generateSignedUrl);
+router.get("/generate-signed-url", verifyJWT, generateSignedUrl);
 
 module.exports = router;

@@ -16,8 +16,13 @@ AWS.config.update({
 var s3 = new AWS.S3();
 
 
-var generateSignedUrl = asyncHandler(async(req , res) => {
-    var fileName = `${uuidv4()}.png`;
+const generateSignedUrl = asyncHandler(async(req, res) => {
+    if (!req.user || !req.user.username) {
+        throw new ApiError(401, "User not authenticated");
+    }
+    
+    const userId = req.user.username;
+    const fileName = `${uuidv4()}_${userId}.png`;
 
     try{
         var params = {
@@ -40,4 +45,4 @@ var generateSignedUrl = asyncHandler(async(req , res) => {
     }
 })
 
-module.exports = generateSignedUrl;
+module.exports = { generateSignedUrl };

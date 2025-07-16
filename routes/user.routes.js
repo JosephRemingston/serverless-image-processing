@@ -1,9 +1,9 @@
 const express = require('express');
 const { getUserProfile } = require('../controllors/user.controllor.js');
-const authenticateJWT = require('../middleware/auth.middleware.js');
+const { verifyJWT } = require('../middleware/auth.middleware.js');
 
 const router = express.Router();
 
-router.get('/profile', authenticateJWT, getUserProfile);
+router.get('/profile', verifyJWT, getUserProfile);
 
 module.exports = router;
