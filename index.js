@@ -4,6 +4,7 @@ var AWS = require('aws-sdk');
 var jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const cors = require('cors');
+const connectDB = require('./utils/mongodb.js');
 const authRouter = require('./routes/auth.routes.js');
 const userRouter = require('./routes/user.routes.js');
 const imageRoutes = require('./routes/image.routes.js');
@@ -44,6 +45,17 @@ app.use('/api/user', userRouter);
 app.use('/api/image', imageRoutes);
 app.use("/api/media", mediaRoutes);
 
-app.listen(PORT , () => {
-    console.log("server");
-})
+// Connect to MongoDB before starting the server
+const startServer = async () => {
+    try {
+        await connectDB();
+        app.listen(PORT, () => {
+            console.log(`Server is running on port ${PORT}`);
+        });
+    } catch (error) {
+        console.error('Failed to start server:', error);
+        process.exit(1);
+    }
+};
+
+startServer();

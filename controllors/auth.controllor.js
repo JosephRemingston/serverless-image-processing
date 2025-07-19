@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const ApiError = require('../utils/ApiError.js');
 const ApiResponse = require('../utils/ApiResponse.js');
 const asyncHandler = require('../utils/asyncHandler.js');
+var user = require("../models/user.model.js");
 var getSecrets = require("../utils/aws-secrets");
 
 var secrets = getSecrets();
@@ -51,7 +52,21 @@ const confirmUser = asyncHandler(async (req, res) => {
     };
     try {
         const data = await cognito.confirmSignUp(params).promise();
-        return ApiResponse.success(res, 'User confirmed', data);
+        if(data){
+            var userData = {
+                username: username,
+                email : username,
+            }
+
+            var newUser = await user.create(userData);
+            if(newUser) {
+                console.log("User created successfully:", newUser);
+                return ApiResponse.success(res, 'User confirmed', data);
+            }
+            else{
+                return ApiResponse.error(res, 500, 'User creation failed', {});
+            }
+        }
     } catch (error) {
         return ApiResponse.error(res, error.statusCode || 400, error.message || 'Confirmation failed', error);
     }
@@ -59,21 +74,89 @@ const confirmUser = asyncHandler(async (req, res) => {
 
 const signin = asyncHandler(async (req, res) => {
     const { username, password } = req.body;
-    const params = {
-        AuthFlow: 'USER_PASSWORD_AUTH',
-        ClientId: clientId,
-        AuthParameters: {
-            USERNAME: username,
-            PASSWORD: password,
-            SECRET_HASH: generateSecretHash(username)
-        }
-    };
+
+    // Input validation
+    if (!username || !password) {
+        return ApiResponse.error(res, 400, "Username and password are required");
+    }
+
     try {
-        const data = await cognito.initiateAuth(params).promise();
-        const token = jwt.sign({ username: username }, 'your-secret-key', { expiresIn: '1h' });
-        return ApiResponse.success(res, 'Signin successful', { token, data });
+        // Cognito authentication parameters
+        const params = {
+            AuthFlow: 'USER_PASSWORD_AUTH',
+            ClientId: clientId,
+            AuthParameters: {
+                USERNAME: username,  // Cognito expects USERNAME, not EMAIL
+                PASSWORD: password,
+                SECRET_HASH: generateSecretHash(username)
+            }
+        };
+
+        // Authenticate with Cognito
+        const cognitoData = await cognito.initiateAuth(params).promise();
+        
+        if (!cognitoData || !cognitoData.AuthenticationResult) {
+            return ApiResponse.error(res, 401, "Authentication failed");
+        }
+
+        // Find user in our database
+        const userData = await user.findOne({ email: username });
+        if (!userData) {
+            return ApiResponse.error(res, 404, "User not found in database");
+        }
+
+
+        // Generate JWT token with proper claims
+        const token = jwt.sign(
+            {
+                username: username,
+                userId: userData._id,
+                iat: Math.floor(Date.now() / 1000),
+            },
+            "your-secret-key",
+            {
+                expiresIn: '1h',
+                algorithm: 'HS256'
+            }
+        );
+
+        return ApiResponse.success(res, 'Signin successful', {
+            token,
+            user: {
+                id: userData._id,
+                username: userData.username,
+                email: userData.email
+            },
+            cognitoTokens: {
+                accessToken: cognitoData.AuthenticationResult.AccessToken,
+                refreshToken: cognitoData.AuthenticationResult.RefreshToken,
+                expiresIn: cognitoData.AuthenticationResult.ExpiresIn
+            }
+        });
+
     } catch (error) {
-        return ApiResponse.error(res, error.statusCode || 400, error.message || 'Signin failed', error);
+        console.error('Signin error:', error);
+
+        // Handle specific Cognito errors
+        if (error.code === 'NotAuthorizedException') {
+            return ApiResponse.error(res, 401, "Invalid username or password");
+        }
+        if (error.code === 'UserNotConfirmedException') {
+            return ApiResponse.error(res, 403, "User is not confirmed");
+        }
+        if (error.code === 'PasswordResetRequiredException') {
+            return ApiResponse.error(res, 403, "Password reset required");
+        }
+        if (error.code === 'UserNotFoundException') {
+            return ApiResponse.error(res, 404, "User not found");
+        }
+
+        return ApiResponse.error(
+            res, 
+            error.statusCode || 500,
+            error.message || 'Authentication failed',
+            { requestId: error.requestId }
+        );
     }
 });
 
