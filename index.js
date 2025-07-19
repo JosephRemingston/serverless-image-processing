@@ -9,6 +9,7 @@ const authRouter = require('./routes/auth.routes.js');
 const userRouter = require('./routes/user.routes.js');
 const imageRoutes = require('./routes/image.routes.js');
 const mediaRoutes = require("./routes/media.routes.js");
+var processedImagRoutes = require("./routes/processedImage.routes.js");
 const getSecrets = require("./utils/aws-secrets.js");
 var app = express();
 
@@ -44,6 +45,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/user', userRouter);
 app.use('/api/image', imageRoutes);
 app.use("/api/media", mediaRoutes);
+app.use("/api/processedImage" , processedImagRoutes);
 
 // Connect to MongoDB before starting the server
 const startServer = async () => {
