@@ -2,8 +2,8 @@ const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
 const ProcessedImageSchema = new Schema({
-    userId: {
-        type: Schema.Types.ObjectId,
+    email: {
+        type : String,
         ref: 'User',
         required: false
     },
