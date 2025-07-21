@@ -4,7 +4,6 @@ const { verifyJWT } = require('../middleware/auth.middleware.js');
 
 const router = express.Router();
 
-router.use(verifyJWT);
 router.get('/get-processed-image', getProcessedImageData);
 router.post('/create-processed-image', createProcessedImage);
 
