@@ -49,17 +49,18 @@ const getProcessedImageData = asyncHandler(async (req, res) => {
 
 const createProcessedImage = asyncHandler(async (req, res) => {
     try {
-        const { userId, fileId, fileUrl, processedJson } = req.body;
+        const { userId, fileName, processedFile , rawAiResponse } = req.body;
 
-        if (!userId || !fileId || !fileUrl || !processedJson) {
+        if (!userId || !fileName || !originalFile || !processedFile || !rawAiResponse) {
             return ApiResponse.error(res, 400, "Missing required fields");
         }
 
         const newProcessedImage = await ProcessedImage.create({
             userId,
-            fileId,
-            fileUrl,
-            processedJson
+            fileName,
+            originalFile,
+            processedFile,
+            rawAiResponse
         });
 
         return ApiResponse.success(res, "Processed image record created successfully", newProcessedImage);

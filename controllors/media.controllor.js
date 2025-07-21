@@ -22,7 +22,7 @@ const generateSignedUrl = asyncHandler(async(req, res) => {
     }
     
     const userId = req.user.username;
-    const fileName = `${uuidv4()}.png`;
+    const fileName = `${userId}.png`;
 
     try{
         var params = {
@@ -33,7 +33,6 @@ const generateSignedUrl = asyncHandler(async(req, res) => {
 
 
         var url = await s3.getSignedUrlPromise("putObject" , params);
-        var correctedUrl = removeContentTypeFromUrl(url);
 
         return ApiResponse.success(res , "signed url generated" , {
             "signed url" : url,
