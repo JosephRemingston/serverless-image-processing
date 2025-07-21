@@ -9,11 +9,11 @@ const ProcessedImage = require("../models/processedImage.model.js");
 
 const getProcessedImageData = asyncHandler(async (req, res) => {
     try {
-        const { userId, fileName } = req.body;
+        const { email, fileName } = req.body;
         const query = {};
         
-        if (userId) {
-            query.userId = userId;
+        if (email) {
+            query.email = email;
         }
         
         if (fileName) {
@@ -51,12 +51,12 @@ const createProcessedImage = asyncHandler(async (req, res) => {
     try {
         const { email, fileName, processedFile , rawAiResponse } = req.body;
 
-        if (!userId || !fileName || !processedFile || !rawAiResponse) {
+        if (!email || !fileName || !processedFile || !rawAiResponse) {
             return ApiResponse.error(res, 400, "Missing required fields");
         }
 
         const newProcessedImage = await ProcessedImage.create({
-            userId,
+            email,
             fileName,
             processedFile,
             rawAiResponse
