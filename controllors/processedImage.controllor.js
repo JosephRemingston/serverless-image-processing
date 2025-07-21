@@ -9,7 +9,7 @@ var processedImage = require("../models/processedImage.model.js");
 
 const getProcessedImageData = asyncHandler(async (req, res) => {
     try {
-        const { email } = req.body;
+        const email = req.query.email;
         console.log("Email Param:", email);
 
         const processedImagesData = await processedImage.find({email : email})
