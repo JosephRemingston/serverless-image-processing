@@ -20,7 +20,7 @@ const getProcessedImageData = asyncHandler(async (req, res) => {
             query.fileUrl = { $regex: fileName, $options: 'i' }; // Case-insensitive search
         }
 
-        if (!userId && !fileName) {
+        if (!email && !fileName) {
             return ApiResponse.error(res, 400, "At least one search parameter (userId or fileName) is required");
         }
 
