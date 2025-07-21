@@ -51,7 +51,7 @@ const createProcessedImage = asyncHandler(async (req, res) => {
     try {
         const { userId, fileName, processedFile , rawAiResponse } = req.body;
 
-        if (!userId || !fileName || !originalFile || !processedFile || !rawAiResponse) {
+        if (!userId || !fileName || !processedFile || !rawAiResponse) {
             return ApiResponse.error(res, 400, "Missing required fields");
         }
 
