@@ -58,7 +58,6 @@ const createProcessedImage = asyncHandler(async (req, res) => {
         const newProcessedImage = await ProcessedImage.create({
             userId,
             fileName,
-            originalFile,
             processedFile,
             rawAiResponse
         });
