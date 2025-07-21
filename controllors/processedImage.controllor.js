@@ -2,38 +2,26 @@ const express = require("express");
 const ApiResponse = require("../utils/ApiResponse.js");
 const ApiError = require("../utils/ApiError.js");
 const asyncHandler = require("../utils/asyncHandler.js");
-const ProcessedImage = require("../models/processedImage.model.js");
+var processedImage = require("../models/processedImage.model.js");
 
 
 
 
 const getProcessedImageData = asyncHandler(async (req, res) => {
     try {
-        const { email, fileName } = req.body;
-        const query = {};
-        
-        if (email) {
-            query.email = email;
-        }
-        
-        if (fileName) {
-            query.fileUrl = { $regex: fileName, $options: 'i' }; // Case-insensitive search
-        }
+        const { email } = req.body;
+        console.log("Email Param:", email);
 
-        if (!email && !fileName) {
-            return ApiResponse.error(res, 400, "At least one search parameter (userId or fileName) is required");
-        }
-
-        const processedImages = await ProcessedImage.find(query)
+        const processedImagesData = await processedImage.find({email : email})
             .sort({ createdAt: -1 }) // Sort by newest first
 
-        if (!processedImages || processedImages.length === 0) {
+        if (!processedImagesData) {
             return ApiResponse.error(res, 404, "No processed images found matching the criteria");
         }
 
         return ApiResponse.success(res, "Processed images retrieved successfully", {
-            count: processedImages.length,
-            images: processedImages
+            count: processedImagesData.length,
+            images: processedImagesData
         });
     } catch (error) {
         console.error('Error in getProcessedImageData:', error);
@@ -55,7 +43,7 @@ const createProcessedImage = asyncHandler(async (req, res) => {
             return ApiResponse.error(res, 400, "Missing required fields");
         }
 
-        const newProcessedImage = await ProcessedImage.create({
+        const newProcessedImage = await processedImage.create({
             email,
             fileName,
             processedFile,

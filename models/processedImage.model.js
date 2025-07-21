@@ -25,4 +25,5 @@ const ProcessedImageSchema = new Schema({
     }
 });
 
-module.exports = mongoose.model('processedImage', ProcessedImageSchema);
+var processedImage = mongoose.model('processedimage', ProcessedImageSchema);
+module.exports = processedImage;
