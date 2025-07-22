@@ -9,6 +9,7 @@
 6. [AWS Integration](#aws-integration)
 7. [Frontend Documentation](#frontend-documentation)
 8. [Security Features](#security-features)
+9. [Frontend Repository](#frontend-Repository)
 
 ## System Architecture
 
@@ -365,3 +366,5 @@ serverless_processing/
    cd frontend
    npm start
    ```
+## Frontend Repository
+    https://github.com/JosephRemingston/serverless_image_processing_frontend
