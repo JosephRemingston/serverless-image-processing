@@ -1,241 +1,367 @@
-# Serverless Media Processing API
+# Serverless Media Processing Documentation
 
-## Overview
+## Table of Contents
+1. [System Architecture](#system-architecture)
+2. [Project Structure](#project-structure)
+3. [API Documentation](#api-documentation)
+4. [Authentication Flow](#authentication-flow)
+5. [Database Schema](#database-schema)
+6. [AWS Integration](#aws-integration)
+7. [Frontend Documentation](#frontend-documentation)
+8. [Security Features](#security-features)
 
-This project is a serverless-ready, image and media processing API built with Node.js and Express, designed for cloud-native deployments (e.g., AWS EC2, Lambda triggers). It provides endpoints for:
+## System Architecture
 
-- **User authentication and management** (via AWS Cognito)
-- **Media upload** (with S3 signed URLs)
-- **Image processing** (resize, compress, etc.)
-- **AI-based image recognition** (using AWS Rekognition)
-
-The API is designed to be triggered by AWS Lambda functions (or other clients), which upload files and call the API for processing and analysis.
-
----
-
-## Architecture
+The application follows a serverless architecture pattern utilizing various AWS services:
 
 ```mermaid
-graph TD
-    User-->|Uploads file|Lambda
-    Lambda-->|Calls API|EC2[Express API on EC2]
-    EC2-->|Processes image, calls AWS services|AWS[(AWS Services)]
-    EC2-->|Returns result|Lambda
-    Lambda-->|Returns result|User
+graph TB
+    Client[Client Application]
+    API[Express API Server]
+    Cognito[AWS Cognito]
+    S3[AWS S3]
+    Rekognition[AWS Rekognition]
+    MongoDB[(MongoDB)]
+    SecretsManager[AWS Secrets Manager]
+
+    Client -->|Authentication| API
+    API -->|User Management| Cognito
+    API -->|Image Storage| S3
+    API -->|Image Analysis| Rekognition
+    API -->|Data Storage| MongoDB
+    API -->|Secrets| SecretsManager
+
+    subgraph AWS Cloud
+        Cognito
+        S3
+        Rekognition
+        SecretsManager
+    end
 ```
 
-- **User** uploads a file (e.g., via a web/mobile app).
-- **Lambda** function is triggered, which uploads the file to S3 and calls the API (hosted on EC2 or similar).
-- **API** processes the image (resize, compress, analyze) and may interact with AWS Rekognition or S3.
-- **Results** are returned back through Lambda to the user.
-
----
-
-## Features
-
-### 1. Authentication (AWS Cognito)
-- **Signup:** `/api/auth/signup`
-- **Confirm User:** `/api/auth/confirm-user`
-- **Signin:** `/api/auth/signin`
-- Uses AWS Cognito for secure, scalable user management.
-
-### 2. User Profile
-- **Get Profile:** `/api/user/profile` (JWT-protected)
-
-### 3. Media Upload
-- **Generate S3 Signed URL:** `/api/media/generate-signed-url`
-- Returns a pre-signed S3 URL for secure, direct uploads.
-
-### 4. Image Processing
-- **Process Image:** `/api/image/process-image`
-    - Accepts image via form-data upload (`image` field) or by URL (`imageUrl` in JSON body).
-    - Resizes and compresses the image using [sharp](https://sharp.pixelplumbing.com/).
-    - Returns the processed image as a base64 string.
-
-- **AI Recognition:** `/api/image/ai-recognition`
-    - Accepts image via form-data upload or by URL.
-    - Uses AWS Rekognition to detect labels/objects in the image.
-    - Returns detected labels and confidence scores.
-
----
-
-## File/Folder Structure
+## Project Structure
 
 ```
 serverless_processing/
+├── API_DOCUMENTATION.md
+├── app.js
+├── index.js             # Main application entry point
+├── package.json         # Project dependencies
+├── README.md
+├── sample.png
 │
-├── index.js                # Main Express app entry point
-├── app.js                  # (empty, placeholder)
-├── package.json            # Project dependencies and scripts
-├── sample.png              # Sample image for testing
+├── controllors/         # Business logic handlers
+│   ├── auth.controllor.js       # Authentication logic
+│   ├── image.controllor.js      # Image processing
+│   ├── media.controllor.js      # Media handling
+│   ├── processedImage.controllor.js  # Processed image data
+│   └── user.controllor.js       # User management
 │
-├── controllors/            # All business logic/controllers
-│   ├── auth.controllor.js      # Auth (signup, signin, confirm)
-│   ├── user.controllor.js      # User profile
-│   ├── media.controllor.js     # S3 signed URL generation
-│   └── image.controllor.js     # Image processing & AI recognition
+├── frontend/           # React frontend application
+│   ├── package.json
+│   ├── public/
+│   └── src/
+│       ├── App.js
+│       ├── components/
+│       ├── context/
+│       └── api/
 │
-├── routes/                 # Express route definitions
+├── middleware/         # Express middleware
+│   └── auth.middleware.js   # JWT verification
+│
+├── models/            # MongoDB schemas
+│   ├── processedImage.model.js
+│   └── user.model.js
+│
+├── routes/            # API routes
 │   ├── auth.routes.js
-│   ├── user.routes.js
+│   ├── image.routes.js
 │   ├── media.routes.js
-│   └── image.routes.js
+│   └── user.routes.js
 │
-├── middleware/             # Custom middleware (e.g., JWT auth)
-│   └── auth.middleware.js
-│
-├── utils/                  # Utility modules (logging, error, AWS secrets, etc.)
+├── utils/             # Utility functions
 │   ├── ApiError.js
 │   ├── ApiResponse.js
 │   ├── asyncHandler.js
 │   ├── aws-secrets.js
 │   ├── generateUserId.js
 │   ├── logentries.js
+│   ├── mongodb.js
 │   └── urlGenerator.js
-│
-├── test/                   # Test scripts and sample usage
-│   ├── api.test.js             # Jest/Supertest API tests
-│   └── imageFunctions.test.js  # Standalone function tests
-│
-└── models/                 # (empty, placeholder for future DB models)
 ```
 
----
+## API Documentation
 
-## Key Components
+### Authentication Endpoints
 
-### Controllers
+#### 1. User Signup
+- **Endpoint**: `POST /api/auth/signup`
+- **Authentication**: None
+- **Request Body**:
+```json
+{
+    "username": "user@example.com",
+    "password": "StrongPassword123!",
+    "email": "user@example.com"
+}
+```
+- **Success Response** (200):
+```json
+{
+    "statusCode": 200,
+    "message": "Signup successful",
+    "data": {
+        "UserConfirmed": false,
+        "UserSub": "xxxx-xxxx-xxxx",
+        "CodeDeliveryDetails": {
+            "Destination": "u***@example.com",
+            "DeliveryMedium": "EMAIL",
+            "AttributeName": "email"
+        }
+    }
+}
+```
 
-- **auth.controllor.js:** Handles signup, confirmation, and signin using AWS Cognito.
-- **user.controllor.js:** Fetches user profile from Cognito (JWT-protected).
-- **media.controllor.js:** Generates S3 signed URLs for secure uploads.
-- **image.controllor.js:** Handles image processing (resize/compress) and AI recognition (AWS Rekognition). Accepts both direct file uploads and image URLs (for Lambda integration).
+#### 2. Confirm User
+- **Endpoint**: `POST /api/auth/confirm-user`
+- **Authentication**: None
+- **Request Body**:
+```json
+{
+    "username": "user@example.com",
+    "code": "123456"
+}
+```
+- **Success Response** (200):
+```json
+{
+    "statusCode": 200,
+    "message": "User confirmed",
+    "data": {
+        "username": "user@example.com",
+        "status": "CONFIRMED"
+    }
+}
+```
 
-### Utilities
+#### 3. User Signin
+- **Endpoint**: `POST /api/auth/signin`
+- **Authentication**: None
+- **Request Body**:
+```json
+{
+    "username": "user@example.com",
+    "password": "StrongPassword123!"
+}
+```
+- **Success Response** (200):
+```json
+{
+    "statusCode": 200,
+    "message": "Signin successful",
+    "data": {
+        "token": "jwt.token.here",
+        "user": {
+            "id": "user_id",
+            "username": "user@example.com",
+            "email": "user@example.com"
+        },
+        "cognitoTokens": {
+            "accessToken": "cognito.access.token",
+            "refreshToken": "cognito.refresh.token",
+            "expiresIn": 3600
+        }
+    }
+}
+```
 
-- **aws-secrets.js:** Fetches AWS credentials and secrets from AWS Secrets Manager.
-- **ApiResponse.js:** Standardizes API responses.
-- **ApiError.js:** Standardizes error handling and logging.
-- **asyncHandler.js:** Wraps async route handlers for error safety.
-- **logentries.js:** Appends logs to a file with timestamps.
-- **urlGenerator.js:** Removes `Content-Type` from S3 signed URLs (for compatibility).
-- **generateUserId.js:** Generates unique user IDs.
+### Media Processing Endpoints
 
-### Middleware
+#### 1. Generate Signed URL
+- **Endpoint**: `GET /api/media/generate-signed-url`
+- **Authentication**: Required (JWT)
+- **Success Response** (200):
+```json
+{
+    "statusCode": 200,
+    "message": "signed url generated",
+    "data": {
+        "signed url": "https://s3-bucket-url...",
+        "filename": "unique_filename.png"
+    }
+}
+```
 
-- **auth.middleware.js:** JWT authentication for protected routes.
+#### 2. Process Image
+- **Endpoint**: `POST /api/image/process-image`
+- **Authentication**: Required (JWT)
+- **Request Body**: Form-data with image file or JSON with image URL
+- **Success Response** (200):
+```json
+{
+    "statusCode": 200,
+    "message": "Image processed successfully",
+    "data": {
+        "processedImageUrl": "https://processed-image-url...",
+        "size": 1024,
+        "format": "png"
+    }
+}
+```
 
----
+#### 3. AI Recognition
+- **Endpoint**: `POST /api/image/ai-recognition`
+- **Authentication**: Required (JWT)
+- **Request Body**: Form-data with image file or JSON with image URL
+- **Success Response** (200):
+```json
+{
+    "statusCode": 200,
+    "message": "AI recognition successful",
+    "data": {
+        "labels": [
+            {
+                "Name": "Object",
+                "Confidence": 99.5
+            }
+        ]
+    }
+}
+```
 
-## API Usage
+### Processed Image Data Endpoints
 
-### Authentication
+#### 1. Get Processed Image Data
+- **Endpoint**: `POST /api/processed-images/get`
+- **Authentication**: Required (JWT)
+- **Request Body**:
+```json
+{
+    "email": "user@example.com",
+    "fileName": "image.png"
+}
+```
+- **Success Response** (200):
+```json
+{
+    "statusCode": 200,
+    "message": "Processed images retrieved successfully",
+    "data": {
+        "count": 1,
+        "images": [
+            {
+                "_id": "image_id",
+                "email": "user@example.com",
+                "fileName": "image.png",
+                "processedFile": {},
+                "rawAiResponse": {},
+                "createdAt": "2025-07-22T..."
+            }
+        ]
+    }
+}
+```
 
-- **Signup:**  
-  `POST /api/auth/signup`  
-  Body: `{ "username": "...", "password": "...", "email": "..." }`
+## AWS Integration Details
 
-- **Confirm User:**  
-  `POST /api/auth/confirm-user`  
-  Body: `{ "username": "...", "code": "..." }`
+### 1. AWS Cognito
+- Used for user authentication and management
+- Configured with:
+  - User pool for managing user accounts
+  - Client application for API access
+  - Custom authentication flow with email verification
 
-- **Signin:**  
-  `POST /api/auth/signin`  
-  Body: `{ "username": "...", "password": "..." }`  
-  Returns: JWT token
+### 2. AWS S3
+- Used for storing uploaded and processed images
+- Features:
+  - Signed URLs for secure direct uploads
+  - Organized folder structure
+  - Automatic cleanup of temporary files
 
-### User
+### 3. AWS Rekognition
+- Used for AI-powered image analysis
+- Features:
+  - Label detection
+  - Object recognition
+  - Confidence scores
 
-- **Get Profile:**  
-  `GET /api/user/profile`  
-  Header: `Authorization: <JWT token>`
+### 4. AWS Secrets Manager
+- Manages sensitive configuration
+- Stores:
+  - Database credentials
+  - AWS access keys
+  - JWT secrets
+  - Cognito credentials
 
-### Media
+## Frontend Application Structure
 
-- **Generate S3 Signed URL:**  
-  `GET /api/media/generate-signed-url`  
-  Returns: `{ "signed url": "...", "filename": "..." }`
+### Core Components
+1. **Authentication Context (`context/AuthContext.js`)**
+   - Manages authentication state
+   - Handles token storage
+   - Provides auth methods to components
 
-### Image Processing
+2. **API Integration (`api/*.js`)**
+   - Centralizes API calls
+   - Handles request/response formatting
+   - Manages authentication headers
 
-- **Process Image:**  
-  `POST /api/image/process-image`  
-  - Form-data: `image` (file)
-  - OR JSON: `{ "imageUrl": "https://..." }`
-  - Returns: `{ "processedImageBase64": "..." }`
+3. **Main Pages**
+   - HomePage.jsx: Landing page
+   - LoginPage.jsx: Authentication
+   - UploadPage.jsx: Image upload interface
+   - Navbar.jsx: Navigation component
 
-- **AI Recognition:**  
-  `POST /api/image/ai-recognition`  
-  - Form-data: `image` (file)
-  - OR JSON: `{ "imageUrl": "https://..." }`
-  - Returns: `{ "labels": [...] }`
+## Security Features
 
----
+1. **Authentication**
+   - JWT-based API authentication
+   - Cognito user management
+   - Secure password handling
 
-## Lambda Integration
+2. **Data Protection**
+   - CORS protection
+   - Input validation
+   - Rate limiting
+   - Secure file uploads
 
-- Lambda can upload files to S3 using the signed URL from `/api/media/generate-signed-url`.
-- Lambda can then call `/api/image/process-image` or `/api/image/ai-recognition` with either:
-  - The uploaded file (as form-data)
-  - The S3 file URL (`imageUrl` in JSON body)
+3. **Error Handling**
+   - Standardized error responses
+   - Detailed logging
+   - Request tracking
 
----
+## Development Setup
 
-## Running Locally
+1. **Prerequisites**
+   - Node.js ≥ 14
+   - MongoDB
+   - AWS Account with required services
 
-1. **Install dependencies:**
+2. **Environment Configuration**
+   ```env
+   AWS_REGION=ap-southeast-1
+   MONGODB_URI=mongodb://...
+   JWT_SECRET=your-secret
+   COGNITO_CLIENT_ID=your-client-id
+   COGNITO_CLIENT_SECRET=your-client-secret
+   ```
+
+3. **Installation**
    ```bash
+   # Backend
+   npm install
+   
+   # Frontend
+   cd frontend
    npm install
    ```
 
-2. **Set up AWS credentials and secrets:**
-   - Store your AWS keys and Cognito details in AWS Secrets Manager under the secret name `serverless-media-processing`.
-
-3. **Start the server:**
+4. **Running the Application**
    ```bash
+   # Backend
+   npm run dev
+   
+   # Frontend
+   cd frontend
    npm start
    ```
-
-4. **Run tests:**
-   ```bash
-   npm test
-   ```
-
----
-
-## Testing
-
-- **API tests:**  
-  Located in `test/api.test.js` (uses Jest and Supertest).
-- **Standalone function tests:**  
-  Located in `test/imageFunctions.test.js` (for direct function testing with local images).
-
----
-
-## Security
-
-- All sensitive credentials are managed via AWS Secrets Manager.
-- JWT is used for user authentication and protected routes.
-- S3 signed URLs ensure secure, time-limited uploads.
-
----
-
-## Extending
-
-- Add new models in the `models/` directory.
-- Add new routes/controllers as needed.
-- Integrate with other AWS services as required.
-
----
-
-## Contributing
-
-1. Fork the repo and create your branch.
-2. Make your changes and add tests.
-3. Submit a pull request.
-
----
-
-## License
-
-ISC 
