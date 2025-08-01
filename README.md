@@ -93,11 +93,40 @@ serverless_processing/
 
 ## API Documentation
 
+### Global Response Format
+All API endpoints follow a consistent response format:
+
+**Success Response Format**:
+```json
+{
+    "statusCode": 200,
+    "message": "Operation successful",
+    "data": {
+        // Response data specific to the endpoint
+    }
+}
+```
+
+**Error Response Format**:
+```json
+{
+    "statusCode": 400-500,
+    "message": "Error message",
+    "data": {
+        "requestId": "optional-request-id",
+        // Additional error details
+    }
+}
+```
+
 ### Authentication Endpoints
 
 #### 1. User Signup
 - **Endpoint**: `POST /api/auth/signup`
+- **Description**: Register a new user with the system
 - **Authentication**: None
+- **Headers**:
+  - `Content-Type: application/json`
 - **Request Body**:
 ```json
 {
@@ -122,10 +151,17 @@ serverless_processing/
     }
 }
 ```
+- **Error Responses**:
+  - `400 Bad Request`: Missing or invalid parameters
+  - `409 Conflict`: User already exists
+  - `500 Internal Server Error`: Server error
 
 #### 2. Confirm User
 - **Endpoint**: `POST /api/auth/confirm-user`
+- **Description**: Confirm user registration with verification code
 - **Authentication**: None
+- **Headers**:
+  - `Content-Type: application/json`
 - **Request Body**:
 ```json
 {
@@ -144,10 +180,18 @@ serverless_processing/
     }
 }
 ```
+- **Error Responses**:
+  - `400 Bad Request`: Invalid code or username
+  - `404 Not Found`: User not found
+  - `410 Gone`: Code expired
+  - `500 Internal Server Error`: Server error
 
 #### 3. User Signin
 - **Endpoint**: `POST /api/auth/signin`
+- **Description**: Authenticate user and get access tokens
 - **Authentication**: None
+- **Headers**:
+  - `Content-Type: application/json`
 - **Request Body**:
 ```json
 {
@@ -175,45 +219,112 @@ serverless_processing/
     }
 }
 ```
+- **Error Responses**:
+  - `400 Bad Request`: Invalid login parameters
+  - `401 Unauthorized`: Invalid credentials
+  - `403 Forbidden`: User not confirmed
+  - `404 Not Found`: User not found
+  - `500 Internal Server Error`: Server error
+
+### User Endpoints
+
+#### 1. Get User Profile
+- **Endpoint**: `GET /api/user/profile`
+- **Description**: Get current user's profile information
+- **Authentication**: Required
+- **Headers**:
+  - `Authorization: Bearer <token>`
+- **Success Response** (200):
+```json
+{
+    "statusCode": 200,
+    "message": "User profile fetched",
+    "data": {
+        "Username": "user@example.com",
+        "UserAttributes": [
+            {
+                "Name": "email",
+                "Value": "user@example.com"
+            }
+            // Other user attributes
+        ]
+    }
+}
+```
+- **Error Responses**:
+  - `401 Unauthorized`: Missing or invalid token
+  - `404 Not Found`: User not found
+  - `500 Internal Server Error`: Server error
 
 ### Media Processing Endpoints
 
 #### 1. Generate Signed URL
 - **Endpoint**: `GET /api/media/generate-signed-url`
-- **Authentication**: Required (JWT)
+- **Description**: Generate a pre-signed S3 URL for direct file upload
+- **Authentication**: Required
+- **Headers**:
+  - `Authorization: Bearer <token>`
 - **Success Response** (200):
 ```json
 {
     "statusCode": 200,
-    "message": "signed url generated",
+    "message": "Signed URL generated",
     "data": {
-        "signed url": "https://s3-bucket-url...",
-        "filename": "unique_filename.png"
+        "signedUrl": "https://s3-bucket-url...",
+        "fileName": "unique_filename.png",
+        "uploadKey": "uploads/unique_filename.png"
     }
 }
 ```
+- **Error Responses**:
+  - `401 Unauthorized`: Missing or invalid token
+  - `500 Internal Server Error`: Failed to generate URL
 
 #### 2. Process Image
 - **Endpoint**: `POST /api/image/process-image`
-- **Authentication**: Required (JWT)
-- **Request Body**: Form-data with image file or JSON with image URL
+- **Description**: Process an uploaded image (resize, format conversion)
+- **Authentication**: Required
+- **Headers**:
+  - `Authorization: Bearer <token>`
+  - `Content-Type: multipart/form-data` or `application/json`
+- **Request Body**:
+  - Form-data: `image: <file>`
+  OR
+  ```json
+  {
+      "filename": "uploads/image.png"
+  }
+  ```
 - **Success Response** (200):
 ```json
 {
     "statusCode": 200,
-    "message": "Image processed successfully",
+    "message": "Image successfully processed",
     "data": {
-        "processedImageUrl": "https://processed-image-url...",
-        "size": 1024,
-        "format": "png"
+        "processedImageBase64": "base64_encoded_image_string"
     }
 }
 ```
+- **Error Responses**:
+  - `400 Bad Request`: No image provided
+  - `401 Unauthorized`: Missing or invalid token
+  - `500 Internal Server Error`: Processing failed
 
 #### 3. AI Recognition
 - **Endpoint**: `POST /api/image/ai-recognition`
-- **Authentication**: Required (JWT)
-- **Request Body**: Form-data with image file or JSON with image URL
+- **Description**: Perform AI analysis on an image using AWS Rekognition
+- **Authentication**: Required
+- **Headers**:
+  - `Authorization: Bearer <token>`
+  - `Content-Type: multipart/form-data` or `application/json`
+- **Request Body**:
+  - Form-data: `image: <file>`
+  OR
+  ```json
+  {
+      "filename": "uploads/image.png"
+  }
+  ```
 - **Success Response** (200):
 ```json
 {
@@ -223,25 +334,29 @@ serverless_processing/
         "labels": [
             {
                 "Name": "Object",
-                "Confidence": 99.5
+                "Confidence": 99.5,
+                "Instances": [],
+                "Parents": []
             }
         ]
     }
 }
 ```
+- **Error Responses**:
+  - `400 Bad Request`: No image provided
+  - `401 Unauthorized`: Missing or invalid token
+  - `500 Internal Server Error`: Recognition failed
 
 ### Processed Image Data Endpoints
 
 #### 1. Get Processed Image Data
-- **Endpoint**: `POST /api/processed-images/get`
-- **Authentication**: Required (JWT)
-- **Request Body**:
-```json
-{
-    "email": "user@example.com",
-    "fileName": "image.png"
-}
-```
+- **Endpoint**: `GET /api/processedImage/get-processed-image`
+- **Description**: Retrieve processed image records for a user
+- **Authentication**: Required
+- **Headers**:
+  - `Authorization: Bearer <token>`
+- **Query Parameters**:
+  - `email`: User's email address
 - **Success Response** (200):
 ```json
 {
@@ -254,14 +369,61 @@ serverless_processing/
                 "_id": "image_id",
                 "email": "user@example.com",
                 "fileName": "image.png",
-                "processedFile": {},
-                "rawAiResponse": {},
+                "processedFile": "processed_file_url",
+                "rawAiResponse": {
+                    // AI recognition data
+                },
                 "createdAt": "2025-07-22T..."
             }
         ]
     }
 }
 ```
+- **Error Responses**:
+  - `400 Bad Request`: Missing email parameter
+  - `401 Unauthorized`: Missing or invalid token
+  - `404 Not Found`: No images found
+  - `500 Internal Server Error`: Retrieval failed
+
+#### 2. Create Processed Image Record
+- **Endpoint**: `POST /api/processedImage/create-processed-image`
+- **Description**: Create a new processed image record
+- **Authentication**: Required
+- **Headers**:
+  - `Authorization: Bearer <token>`
+  - `Content-Type: application/json`
+- **Request Body**:
+```json
+{
+    "email": "user@example.com",
+    "fileName": "image.png",
+    "processedFile": "processed_file_url",
+    "rawAiResponse": {
+        // AI recognition data
+    }
+}
+```
+- **Success Response** (200):
+```json
+{
+    "statusCode": 200,
+    "message": "Processed image record created successfully",
+    "data": {
+        "_id": "new_record_id",
+        "email": "user@example.com",
+        "fileName": "image.png",
+        "processedFile": "processed_file_url",
+        "rawAiResponse": {
+            // AI recognition data
+        },
+        "createdAt": "2025-07-22T..."
+    }
+}
+```
+- **Error Responses**:
+  - `400 Bad Request`: Missing required fields
+  - `401 Unauthorized`: Missing or invalid token
+  - `500 Internal Server Error`: Creation failed
 
 ## AWS Integration Details
 

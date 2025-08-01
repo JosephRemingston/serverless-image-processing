@@ -1,0 +1,16 @@
+{
+  "name": "serverless_media_processing",
+  "version": 2.0,
+  "builds": [
+    {
+      "src": "index.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/index.js"
+    }
+  ]
+}
