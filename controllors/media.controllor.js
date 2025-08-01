@@ -32,7 +32,6 @@ const generateSignedUrl = asyncHandler(async (req, res) => {
     const params = {
       Bucket: 'serverless-media-processing-upload',
       Key: `uploads/${fileName}`,
-      ContentType: 'image/png', // Critical for S3
       Expires: 300,
     };
 
