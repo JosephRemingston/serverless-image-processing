@@ -75,35 +75,49 @@ const confirmUser = asyncHandler(async (req, res) => {
 const signin = asyncHandler(async (req, res) => {
     const { username, password } = req.body;
 
+    console.log('Signin attempt for username:', username);
+
     // Input validation
     if (!username || !password) {
+        console.log('Signin failed: Missing username or password');
         return ApiResponse.error(res, 400, "Username and password are required");
     }
 
     try {
+        // Generate secret hash
+        const secretHash = generateSecretHash(username);
+        console.log('Generated secret hash for authentication');
+
         // Cognito authentication parameters
         const params = {
             AuthFlow: 'USER_PASSWORD_AUTH',
             ClientId: clientId,
             AuthParameters: {
-                USERNAME: username,  // Cognito expects USERNAME, not EMAIL
+                USERNAME: username,
                 PASSWORD: password,
-                SECRET_HASH: generateSecretHash(username)
+                SECRET_HASH: secretHash
             }
         };
 
+        console.log('Attempting Cognito authentication...');
+
         // Authenticate with Cognito
         const cognitoData = await cognito.initiateAuth(params).promise();
+        console.log('Cognito authentication response:', JSON.stringify(cognitoData, null, 2));
         
         if (!cognitoData || !cognitoData.AuthenticationResult) {
+            console.log('Authentication failed: No authentication result from Cognito');
             return ApiResponse.error(res, 401, "Authentication failed");
         }
 
         // Find user in our database
+        console.log('Looking up user in database...');
         const userData = await user.findOne({ email: username });
         if (!userData) {
+            console.log('User not found in database for email:', username);
             return ApiResponse.error(res, 404, "User not found in database");
         }
+        console.log('User found in database:', userData._id);
 
 
         // Generate JWT token with proper claims
@@ -135,20 +149,28 @@ const signin = asyncHandler(async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Signin error:', error);
+        console.error('Signin error:', {
+            code: error.code,
+            message: error.message,
+            stack: error.stack
+        });
 
         // Handle specific Cognito errors
         if (error.code === 'NotAuthorizedException') {
             return ApiResponse.error(res, 401, "Invalid username or password");
         }
         if (error.code === 'UserNotConfirmedException') {
-            return ApiResponse.error(res, 403, "User is not confirmed");
+            return ApiResponse.error(res, 403, "Please confirm your user account with the code sent to your email");
         }
         if (error.code === 'PasswordResetRequiredException') {
-            return ApiResponse.error(res, 403, "Password reset required");
+            return ApiResponse.error(res, 403, "Password reset required. Please reset your password");
         }
         if (error.code === 'UserNotFoundException') {
-            return ApiResponse.error(res, 404, "User not found");
+            return ApiResponse.error(res, 404, "User account not found");
+        }
+        if (error.code === 'InvalidParameterException') {
+            console.error('Invalid parameter:', error.message);
+            return ApiResponse.error(res, 400, "Invalid login parameters provided");
         }
 
         return ApiResponse.error(

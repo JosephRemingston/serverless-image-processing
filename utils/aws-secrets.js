@@ -2,7 +2,8 @@ var {
   SecretsManagerClient,
   GetSecretValueCommand,
 } = require("@aws-sdk/client-secrets-manager");
-
+var dotenv = require("dotenv");
+dotenv.config();
 var secret_name = "serverless-media-processing";
 
 var client = new SecretsManagerClient({
