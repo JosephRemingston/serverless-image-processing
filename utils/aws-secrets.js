@@ -27,6 +27,5 @@ async function getSecrets() {
     console.error(error);
   }
 }
-getSecrets();
 
 module.exports = getSecrets;

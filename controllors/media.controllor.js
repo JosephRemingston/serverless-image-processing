@@ -1,15 +1,18 @@
 const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const AWS = require('aws-sdk');
+var dotenv = require("dotenv");
 const ApiError = require('../utils/ApiError');
 const ApiResponse = require('../utils/ApiResponse');
 const asyncHandler = require('../utils/asyncHandler');
 const getSecrets = require('../utils/aws-secrets');
 
+dotenv.config();
+
 const secrets = getSecrets();
 AWS.config.update({
-  accessKeyId: secrets.AWS_ACCESSKEY,
-  secretAccessKey: secrets.AWS_SECRETACCESSKEY,
+  accessKeyId: process.env.AWS_ACCESSKEY,
+  secretAccessKey: process.env.AWS_SECRETACCESSKEY,
   region: 'ap-southeast-1',
 });
 
@@ -32,6 +35,7 @@ const generateSignedUrl = asyncHandler(async (req, res) => {
     const params = {
       Bucket: 'serverless-media-processing-upload',
       Key: `uploads/${fileName}`,
+      ContentType: "image/png",
       Expires: 300,
     };
 
