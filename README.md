@@ -1,9 +1,166 @@
 # Serverless Media Processing Documentation
 
 ## Table of Contents
-1. [System Architecture](#system-architecture)
-2. [Project Structure](#project-structure)
-3. [API Documentation](#api-documentation)
+1. [Project Overview](#project-overview)
+2. [System Architecture](#system-architecture)
+3. [Process Flow](#process-flow)
+4. [Project Structure](#project-structure)
+5. [API Documentation](#api-documentation)
+
+## Project Overview
+
+The Serverless Media Processing system is a comprehensive cloud-native application that provides advanced image processing and AI-powered analysis capabilities. It leverages AWS services to deliver a scalable, secure, and efficient solution for handling media files.
+
+### Core Features
+
+1. **User Management**
+   - Secure user registration and authentication using AWS Cognito
+   - Email verification for new accounts
+   - JWT-based API authentication
+   - User profile management
+
+2. **Image Processing**
+   - Secure direct uploads to AWS S3
+   - Image resizing and optimization
+   - Format conversion
+   - Quality adjustment
+
+3. **AI Analysis**
+   - Object detection using AWS Rekognition
+   - Label identification
+   - Confidence scoring
+   - Automated image categorization
+
+4. **Data Management**
+   - MongoDB storage for user data and image metadata
+   - Processed image tracking
+   - AI analysis results storage
+   - Historical data access
+
+### Key Benefits
+
+1. **Scalability**
+   - Serverless architecture allows automatic scaling
+   - Handles concurrent processing requests
+   - Efficient resource utilization
+
+2. **Security**
+   - Multi-layer authentication
+   - Secure file uploads via pre-signed URLs
+   - JWT token validation
+   - AWS IAM role-based access
+
+3. **Performance**
+   - Optimized image processing
+   - Fast AI analysis
+   - Efficient data retrieval
+   - Caching capabilities
+
+## Process Flow
+
+### 1. User Authentication Flow
+
+1. **Registration Process**
+   ```mermaid
+   sequenceDiagram
+       Client->>Server: POST /api/auth/signup
+       Server->>Cognito: Create User
+       Cognito->>User: Send Verification Email
+       User->>Server: POST /api/auth/confirm-user
+       Server->>Cognito: Confirm Registration
+       Server->>MongoDB: Create User Record
+       Server->>Client: Confirmation Success
+   ```
+
+2. **Login Process**
+   ```mermaid
+   sequenceDiagram
+       Client->>Server: POST /api/auth/signin
+       Server->>Cognito: Authenticate
+       Cognito->>Server: Return Tokens
+       Server->>MongoDB: Fetch User Data
+       Server->>Client: Return JWT + User Data
+   ```
+
+### 2. Image Processing Flow
+
+1. **Upload Process**
+   ```mermaid
+   sequenceDiagram
+       Client->>Server: GET /api/media/generate-signed-url
+       Server->>S3: Generate Pre-signed URL
+       Server->>Client: Return URL
+       Client->>S3: Direct Upload
+   ```
+
+2. **Processing Pipeline**
+   ```mermaid
+   sequenceDiagram
+       Client->>Server: POST /api/image/process-image
+       Server->>S3: Fetch Original Image
+       Server->>Server: Process Image (Sharp.js)
+       Server->>Client: Return Processed Image
+   ```
+
+3. **AI Analysis Pipeline**
+   ```mermaid
+   sequenceDiagram
+       Client->>Server: POST /api/image/ai-recognition
+       Server->>S3: Fetch Image
+       Server->>Rekognition: Analyze Image
+       Rekognition->>Server: Return Analysis
+       Server->>MongoDB: Store Results
+       Server->>Client: Return Analysis Data
+   ```
+
+### 3. Data Management Flow
+
+1. **Image Tracking**
+   - Every processed image is recorded in MongoDB
+   - Metadata includes:
+     - Original filename
+     - Processing parameters
+     - AI analysis results
+     - Creation timestamp
+     - User association
+
+2. **Result Storage**
+   - AI analysis results are stored with:
+     - Detected labels
+     - Confidence scores
+     - Image relationships
+     - Processing history
+
+### 4. Technical Implementation Details
+
+1. **Image Processing Specifications**
+   - Supported input formats: PNG, JPEG, WebP
+   - Output optimization:
+     - Maximum width: 1024px
+     - JPEG quality: 80%
+     - Automatic format optimization
+   - Metadata preservation
+
+2. **AI Analysis Capabilities**
+   - Object detection with 70%+ confidence
+   - Up to 10 labels per image
+   - Parent-child relationship detection
+   - Instance detection in images
+
+3. **Security Measures**
+   - Token expiration: 1 hour
+   - Refresh token rotation
+   - CORS protection
+   - Rate limiting
+   - Input validation
+   - Error handling
+
+4. **Performance Optimizations**
+   - Connection pooling for MongoDB
+   - AWS service timeouts
+   - Error retry mechanisms
+   - Response caching
+   - Efficient queries
 4. [Authentication Flow](#authentication-flow)
 5. [Database Schema](#database-schema)
 6. [AWS Integration](#aws-integration)
