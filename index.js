@@ -18,7 +18,6 @@ const corsOptions = {
     origin: '*', // Replace with your frontend domain in production
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Access-Control-Allow-Origin'],
-    exposedHeaders: ['Access-Control-Allow-Origin'],
     credentials: true
 };
 

@@ -1,13 +1,21 @@
 const sharp = require('sharp');
 const AWS = require('aws-sdk');
+var dotenv = require("dotenv");
 const asyncHandler = require('../utils/asyncHandler');
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const getSecrets = require("../utils/aws-secrets");
 
-const secrets = getSecrets();
 
-const rekognition = new AWS.Rekognition({ region: secrets.AWS_REGION || 'ap-southeast-1' });
+dotenv.config();
+
+const rekognition = new AWS.Rekognition({ 
+    region: process.env.AWS_REGION,
+    credentials:{
+        accessKeyId: process.env.AWS_ACCESSKEY,
+        secretAccessKey: process.env.AWS_SECRETACCESSKEY
+    } 
+});
 const s3 = new AWS.S3();
 
 // POST /process-image
